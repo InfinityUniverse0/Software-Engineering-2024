@@ -1,0 +1,8 @@
+# gitignore
+
+# Mac OS X
+.DS_Store
+
+# PDF
+*.pdf
+
