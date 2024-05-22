@@ -10,7 +10,7 @@
 
 ## 一、题目要求
 
-本次作业要求实现一个组合逻辑电路的简易模拟器，按照一定的格式要求进行输入输出。
+本次作业要求实现一个组合逻辑电路的简易模拟器，按照一定的格式要求进行输入输出。输入输出格式及问题描述见 [题目描述](./题目描述.pdf) 。
 
 除此之外，要求项目遵循一定的编程规范，考虑项目的可扩展性、错误和异常处理，并进行代码分析（包括静态分析和动态分析）、单元测试、性能分析与代码优化等。
 
@@ -603,33 +603,101 @@ TEST_F(CircuitTest, Constructor) {
     EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_WAIT);
 }
 
-TEST_F(CircuitTest, AddGate) {
+TEST_F(CircuitTest, RunCircuit) {
+    /*
+     * Test Circuit
+     * Add the following gates:
+     *   XOR 2 I1 I2
+     *   XOR 2 O1 I3
+     *   AND 2 O1 I3
+     *   AND 2 I1 I2
+     *   OR 2 O3 O4
+     * Set the inputs to:
+     *   0 1 1
+     * Then reset the inputs to:
+     *   1 1 1
+     * The output of the circuit should be:
+     */
     std::string pins[2] = {"I1", "I2"};
-    circuit->AddGate(0, GATE_TYPE_AND, 2, pins);
-    // Add assertions to verify the gate was added correctly
-}
+    circuit->AddGate(0, GATE_TYPE_XOR, 2, pins);
 
-TEST_F(CircuitTest, SetInput) {
-    circuit->SetInput(0, 1);
-    // Add assertions to verify the input was set correctly
-}
+    pins[0] = "O1"; pins[1] = "I3";
+    circuit->AddGate(1, GATE_TYPE_XOR, 2, pins);
 
-TEST_F(CircuitTest, Reset) {
+    pins[0] = "O1"; pins[1] = "I3";
+    circuit->AddGate(2, GATE_TYPE_AND, 2, pins);
+
+    pins[0] = "I1"; pins[1] = "I2";
+    circuit->AddGate(3, GATE_TYPE_AND, 2, pins);
+
+    pins[0] = "O3"; pins[1] = "O4";
+    circuit->AddGate(4, GATE_TYPE_OR, 2, pins);
+
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_WAIT);
+
+    // Set the inputs to 0 1 1
     circuit->Reset();
-    // Add assertions to verify the circuit was reset correctly
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_WAIT);
+    circuit->SetInput(0, 0);
+    circuit->SetInput(1, 1);
+    circuit->SetInput(2, 1);
+    circuit->Run();
+
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_OK);
+    EXPECT_EQ(circuit->GetOutput(4), 1);
+    EXPECT_EQ(circuit->GetOutput(1), 0);
+
+    // Set the inputs to 1 1 1
+    circuit->Reset();
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_WAIT);
+    circuit->SetInput(0, 1);
+    circuit->SetInput(1, 1);
+    circuit->SetInput(2, 1);
+    circuit->Run();
+
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_OK);
+    EXPECT_EQ(circuit->GetOutput(4), 1);
+    EXPECT_EQ(circuit->GetOutput(1), 1);
 }
 
-TEST_F(CircuitTest, Run) {
-    // Setup the circuit
-    circuit->Run();
-    // Add assertions to verify the circuit ran correctly
-}
+TEST_F(CircuitTest, LoopCircuit) {
+    /*
+     * Test Loop Circuit
+     * Add the following gates:
+     *   XOR 2 I1 O2
+     *   XOR 2 O1 I3
+     *   AND 2 O1 I3
+     *   AND 2 I1 I2
+     *   OR 2 O3 O4
+     * Set the inputs to:
+     *   0 1 1
+     */
+    std::string pins[2] = {"I1", "O2"};
+    circuit->AddGate(0, GATE_TYPE_XOR, 2, pins);
 
-TEST_F(CircuitTest, GetOutput) {
-    // Setup the circuit
+    pins[0] = "O1"; pins[1] = "I3";
+    circuit->AddGate(1, GATE_TYPE_XOR, 2, pins);
+
+    pins[0] = "O1"; pins[1] = "I3";
+    circuit->AddGate(2, GATE_TYPE_AND, 2, pins);
+
+    pins[0] = "I1"; pins[1] = "I2";
+    circuit->AddGate(3, GATE_TYPE_AND, 2, pins);
+
+    pins[0] = "O3"; pins[1] = "O4";
+    circuit->AddGate(4, GATE_TYPE_OR, 2, pins);
+
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_WAIT);
+
+    // Set the inputs to 0 1 1
+    circuit->Reset();
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_WAIT);
+    circuit->SetInput(0, 0);
+    circuit->SetInput(1, 1);
+    circuit->SetInput(2, 1);
     circuit->Run();
-    signal_t output = circuit->GetOutput(0);
-    // Add assertions to verify the output is as expected
+
+    EXPECT_EQ(circuit->GetState(), CIRCUIT_STATE_LOOP);
 }
 
 int main(int argc, char **argv) {
@@ -640,6 +708,8 @@ int main(int argc, char **argv) {
 ```
 
 运行后发现可以通过所有的测试样例。
+
+![image-20240523022316822](./README.assets/image-20240523022316822.png)
 
 除此之外，使用 Varlgrind 工具进行内存泄漏的检查。
 
