@@ -33,7 +33,7 @@ protected:
 
 public:
     explicit Gate(int numInputs);              // Constructor
-    ~Gate();                                   // Destructor
+    virtual ~Gate();                           // Destructor
     void Reset();                              // Reset gate
     int SetInput(int index, signal_t value);   // Set input signal value
     virtual void Calculate() = 0;              // Calculate output
